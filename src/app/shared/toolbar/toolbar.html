@@ -1,0 +1,60 @@
+<div class="tbar" id="tbar">
+    <button class="tbtn on" id="tool-sel" onclick="setTool('sel')"><svg width="13" height="13" viewBox="0 0 13 13"
+            fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M1.5 1.5L6 11.5L8 8L11.5 6L1.5 1.5Z" />
+        </svg>
+        <div class="tip">Select</div>
+    </button>
+    <div class="tdiv"></div>
+    <button class="tbtn" id="tool-cmnt" onclick="setTool('cmnt')"><svg width="13" height="13" viewBox="0 0 13 13"
+            fill="none" stroke="currentColor" stroke-width="1.4">
+            <path
+                d="M6.5 11.5C6.5 11.5 2 7.2 2 4.8C2 2.7 4.02 1 6.5 1C8.98 1 11 2.7 11 4.8C11 7.2 6.5 11.5 6.5 11.5Z" />
+            <circle cx="6.5" cy="4.8" r="1.3" fill="currentColor" stroke="none" />
+        </svg>
+        <div class="tip">Pin</div>
+    </button>
+    <div class="tdiv"></div>
+    <button class="tbtn" id="tool-rect" onclick="setTool('rect')"><svg width="13" height="13" viewBox="0 0 13 13"
+            fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="1.5" y="1.5" width="10" height="10" rx="1.5" />
+        </svg>
+        <div class="tip">Rectangle</div>
+    </button>
+    <button class="tbtn" id="tool-ellipse" onclick="setTool('ellipse')"><svg width="13" height="13" viewBox="0 0 13 13"
+            fill="none" stroke="currentColor" stroke-width="1.4">
+            <ellipse cx="6.5" cy="6.5" rx="5" ry="3.5" />
+        </svg>
+        <div class="tip">Ellipse</div>
+    </button>
+    <button class="tbtn" id="tool-arrow" onclick="setTool('arrow')"><svg width="13" height="13" viewBox="0 0 13 13"
+            fill="none" stroke="currentColor" stroke-width="1.4">
+            <line x1="2.5" y1="10.5" x2="10.5" y2="2.5" />
+            <path d="M6 2.5H10.5V7" />
+        </svg>
+        <div class="tip">Arrow</div>
+    </button>
+    <button class="tbtn" id="tool-pencil" onclick="setTool('pencil')"><svg width="13" height="13" viewBox="0 0 13 13"
+            fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M9.5 1.5L11.5 3.5L4 11H1.5V8.5L9.5 1.5Z" />
+        </svg>
+        <div class="tip">Pencil</div>
+    </button>
+    <button class="tbtn" id="tool-text" onclick="setTool('text')"><svg width="13" height="13" viewBox="0 0 13 13"
+            fill="none" stroke="currentColor" stroke-width="1.4">
+            <line x1="6.5" y1="2.5" x2="6.5" y2="10.5" />
+            <line x1="2.5" y1="2.5" x2="10.5" y2="2.5" />
+        </svg>
+        <div class="tip">Text</div>
+    </button>
+    <button class="tbtn" id="tool-node" onclick="setTool('node')"><svg width="13" height="13" viewBox="0 0 13 13"
+            fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="1" y="4.5" width="4" height="4" rx="1" />
+            <rect x="8" y="1" width="4" height="4" rx="1" />
+            <rect x="8" y="8" width="4" height="4" rx="1" />
+            <line x1="5" y1="6.5" x2="8" y2="3" />
+            <line x1="5" y1="6.5" x2="8" y2="10" />
+        </svg>
+        <div class="tip">Node</div>
+    </button>
+</div>

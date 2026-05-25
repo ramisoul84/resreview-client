@@ -1,0 +1,31 @@
+    <div class="rmap" id="rmap">
+        <div class="rmap-toolbar">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div>
+                    <div class="rmap-h">Roadmap</div>
+                    <div class="rmap-s" id="rmap-sub">Community feedback</div>
+                </div>
+                <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+                    <button onclick="importUnresolved()"
+                        style="font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;background:#f0f0ff;color:#6366f1;border:1px solid #a5b4fc;font-weight:600;"><svg
+                            width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path d="M7 1.5v8M4 7l3 3 3-3" />
+                            <line x1="1.5" y1="12" x2="12.5" y2="12" />
+                        </svg> Import unresolved</button>
+                    <button onclick="addRmapCol()"
+                        style="font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;background:var(--hover);color:var(--text);border:1px solid var(--border);font-weight:600;">+
+                        Add category</button>
+                </div>
+            </div>
+            <div id="rmap-filter-bar" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;min-height:22px;">
+            </div>
+        </div>
+        <div class="rmap-inner">
+            <div class="rmap-inner-w">
+                <div class="rmap-body" id="rmap-body">
+                    <div class="rmap-cols" id="rmap-cols"></div>
+                </div>
+            </div>
+        </div>
+    </div>

@@ -1,0 +1,42 @@
+<div class="canvas"> 
+<app-toolbar></app-toolbar>
+
+<div class="cwrap sel" id="cwrap">
+    <div class="cvp" id="cvp">
+        <svg id="ann-svg">
+            <defs id="svg-defs"></defs>
+        </svg>
+        <div id="annots"></div>
+        <div id="nodes-layer"></div>
+        <div class="img-area" id="main-img"
+            style="position:absolute;left:80px;top:60px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.14);">
+            <img id="canvas-img" alt="">
+
+        </div>
+        <div id="pins"></div>
+    </div>
+    <!-- View toggle upper right -->
+    <div class="view-toggle">
+        <button class="vt-btn" id="vm-comment" data-vm="comment" onclick="setViewMode('comment')">Comment</button>
+        <button class="vt-btn" id="vm-session" data-vm="session" onclick="setViewMode('session')">Session</button>
+        <button class="vt-btn on" id="vm-full" data-vm="full" onclick="setViewMode('full')">Full</button>
+    </div>
+    <!-- Zoom -->
+    <div class="zctrls">
+        <div class="zbtn" onclick="zoomBy(.12)" title="Zoom in">+</div>
+        <div class="zbtn" onclick="fitScreen()" title="Fit [F]"><svg width="11" height="11" viewBox="0 0 13 13"
+                fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M1.5 4.5V1.5H4.5" />
+                <path d="M8.5 1.5H11.5V4.5" />
+                <path d="M11.5 8.5V11.5H8.5" />
+                <path d="M4.5 11.5H1.5V8.5" />
+            </svg></div>
+        <div class="zbtn" onclick="zoomBy(-.12)" title="Zoom out">−</div>
+    </div>
+    <!-- Context menu -->
+    <div class="ctx-menu" id="ctx-menu"></div>
+    <!-- Roadmap overlay (within canvas area) -->
+
+</div>
+</div>
+

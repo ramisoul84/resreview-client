@@ -1,0 +1,92 @@
+.tbar {
+    width: 48px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    gap: 2px;
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.tbtn {
+    width: 36px;
+    height: 36px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    transition: all .15s;
+    position: relative;
+}
+
+.tbtn:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.tbtn.on {
+    background: #f0f0f0;
+    color: var(--text);
+    box-shadow: 0 0 0 1.5px var(--border2);
+}
+
+.tbtn.nav-view.on {
+    background: var(--text) !important;
+    color: #fff !important;
+    box-shadow: none !important;
+}
+
+.tbtn.del-ready {
+    background: #fef2f2 !important;
+    color: #ef4444 !important;
+    box-shadow: 0 0 0 1.5px #fca5a5 !important;
+}
+
+.tdiv {
+    width: 22px;
+    height: 1px;
+    background: var(--border);
+    margin: 3px 0;
+}
+
+.tbot {
+    margin-top: auto;
+}
+
+.tip {
+    position: absolute;
+    left: 43px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--text);
+    color: #fff;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .12s;
+    z-index: 9999;
+}
+
+.tip::before {
+    content: '';
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 4px solid transparent;
+    border-right-color: var(--text);
+}
+
+.tbtn:hover .tip {
+    opacity: 1;
+}

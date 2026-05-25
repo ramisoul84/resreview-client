@@ -1,0 +1,194 @@
+/* ── Canvas ── */
+.canvas{
+    display: flex;
+     height: calc(100vh - 48px)
+}
+.cwrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+}
+
+.cwrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, #ccc 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.cwrap.sel {
+    cursor: default;
+}
+
+.cwrap.pan {
+    cursor: grab;
+}
+
+.cwrap.pan.panning {
+    cursor: grabbing;
+}
+
+.cwrap.cmnt,
+.cwrap.rect,
+.cwrap.ellipse,
+.cwrap.arrow,
+.cwrap.pencil,
+.cwrap.node {
+    cursor: crosshair;
+}
+
+.cwrap.text {
+    cursor: text;
+}
+
+.cwrap.rect *,
+.cwrap.ellipse *,
+.cwrap.arrow *,
+.cwrap.pencil *,
+.cwrap.text *,
+.cwrap.node *,
+.cwrap.cmnt * {
+    pointer-events: none !important;
+}
+
+.cwrap.rect,
+.cwrap.ellipse,
+.cwrap.arrow,
+.cwrap.pencil,
+.cwrap.text,
+.cwrap.node,
+.cwrap.cmnt {
+    pointer-events: auto !important;
+}
+
+.cvp {
+    position: absolute;
+    inset: 0;
+    transform-origin: 0 0;
+    z-index: 1;
+}
+
+#ann-svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#ann-svg.sel-mode {
+    pointer-events: auto;
+}
+
+#annots {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    overflow: visible;
+    z-index: 9;
+}
+
+#nodes-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    overflow: visible;
+    z-index: 11;
+}
+
+/* Annotation elements */
+.a-rect {
+    position: absolute;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.a-ellipse {
+    position: absolute;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.a-label {
+    position: absolute;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    cursor: pointer;
+    font-family: inherit;
+    max-width: 280px;
+}
+
+.a-img {
+    position: absolute;
+    cursor: move;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .15);
+}
+
+.a-img.sel {
+    outline: 2px solid var(--sel);
+    outline-offset: 2px;
+}
+
+.a-img.general {}
+
+.ann-sel {
+    outline: 2px dashed var(--sel) !important;
+    outline-offset: 3px;
+}
+
+svg .ann-sel {
+    outline: none !important;
+    filter: drop-shadow(0 0 3px var(--sel));
+}
+
+/* Resize handles */
+.rh {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border: 1.5px solid var(--sel);
+    border-radius: 2px;
+    z-index: 20;
+    pointer-events: auto;
+}
+
+.rh.tl {
+    left: -5px;
+    top: -5px;
+    cursor: nw-resize;
+}
+
+.rh.tr {
+    right: -5px;
+    top: -5px;
+    cursor: ne-resize;
+}
+
+.rh.bl {
+    left: -5px;
+    bottom: -5px;
+    cursor: sw-resize;
+}
+
+.rh.br {
+    right: -5px;
+    bottom: -5px;
+    cursor: se-resize;
+}

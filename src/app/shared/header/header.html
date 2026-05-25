@@ -1,0 +1,47 @@
+<header class="hdr">
+    <div class="logo">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="7" cy="7" r="5" />
+            <circle cx="7" cy="7" r="2" />
+            <line x1="10.5" y1="10.5" x2="13" y2="13" />
+        </svg>
+        ResReview
+    </div>
+    <!-- User chip + session dropdown -->
+    <div class="user-chip" id="user-chip" onclick="toggleSessDrop()">
+        <div class="user-av uc-av" id="hdr-av" style="background:#6366f1">?</div>
+        <span class="user-name uc-nm" id="hdr-name">Set name</span>
+        <span class="user-sess uc-sess" id="hdr-sess" style="display:none"></span>
+        <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M2 3L4.5 6L7 3" />
+        </svg>
+    </div>
+    <div class="sess-drop" id="sess-drop"></div>
+    <div class="vsep"></div>
+    <!-- Product/version picker -->
+    <div class="vpick" id="vpick" onclick="toggleProductDrop()">
+        <span class="vpick-prod" id="vpick-prod">No Product</span>
+        <span class="vsep" style="height:12px;margin:0 2px;"></span>
+        <span class="vtag" id="vtag">—</span>
+        <span class="vpick-ver" id="vpick-ver">Home Configurator</span>
+        <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M2 3L4.5 6L7 3" />
+        </svg>
+    </div>
+    <div class="prod-drop" id="prod-drop"></div>
+    <div class="hchip">
+        <div class="hdot"></div><span id="hpin">0 pins</span>
+    </div>
+    <div class="hchip">
+        <div class="hdot"></div><span id="hvotes">0 votes</span>
+    </div>
+    <div class="hsp"></div>
+    <div class="nav-tabs">
+        <button class="nav-tab on" id="nav-canvas" routerLink="/canvas">Canvas</button>
+        <button class="nav-tab" id="nav-roadmap" routerLink="/roadmap">Roadmap</button>
+    </div>
+    <div class="vsep"></div>
+    <button class="hbtn" id="admin-btn" onclick="toggleAdmin()">Admin</button>
+    <span class="admin-pill" id="admin-pill" style="display:none" routerLink="/admin">ADMIN</span>
+
+</header>
