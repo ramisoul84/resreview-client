@@ -44,7 +44,7 @@
       </button>
     </div>
 
-    <button type="submit" [disabled]="!registerForm.valid">Create account</button>
+    <button type="submit" [disabled]="!registerForm.valid || isLoading">Create account</button>
 
     <p class="switch">Already have an account? <a routerLink="/login">Sign in</a></p>
   </form>

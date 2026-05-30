@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { StateService } from '../../core/services/state.service';
 
 @Component({
   selector: 'app-toolbar',
@@ -6,4 +7,10 @@ import { Component } from '@angular/core';
   templateUrl: './toolbar.html',
   styleUrl: './toolbar.scss',
 })
-export class Toolbar {}
+export class Toolbar {
+  st = inject(StateService);
+
+  setTool(tool: string): void {
+    this.st.tool.set(tool);
+  }
+}

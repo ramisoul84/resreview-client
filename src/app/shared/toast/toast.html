@@ -1,0 +1,8 @@
+@if (toast.toast(); as t) {
+  <div class="toast-overlay">
+    <div class="toast" [class.error]="t.type === 'error'" [class.success]="t.type === 'success'" [class.info]="t.type === 'info'">
+      <span class="toast-text">{{ t.message }}</span>
+      <button class="toast-close" (click)="toast.hide()">&times;</button>
+    </div>
+  </div>
+}

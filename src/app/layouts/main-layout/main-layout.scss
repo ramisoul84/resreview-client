@@ -1,4 +1,12 @@
   .main-layout {
       min-height: calc(100vh - 64px);
+      display: flex;
+      flex-direction: column;
       background: #f5f7fa;
+    }
+
+    .main-layout > app-canvas {
+      flex: 1;
+      min-height: 0;
+      height: 100%;
     }

@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../shared/toast/toast.service';
 
 export function matchValidator(source: string, target: string): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -24,14 +26,17 @@ export function matchValidator(source: string, target: string): ValidatorFn {
   styleUrl: './register.scss',
 })
 export class Register {
+  private auth = inject(AuthService);
+  private router = inject(Router);
+  private toast = inject(ToastService);
+  private formBuilder = inject(FormBuilder);
+
   registerForm: FormGroup;
+  isLoading = false;
   showPassword = false;
   showConfirmPassword = false;
 
-  constructor(
-    private formBuilder: FormBuilder,
-    private router: Router
-  ) {
+  constructor() {
     this.registerForm = this.formBuilder.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
@@ -50,6 +55,21 @@ export class Register {
 
   onSubmit(): void {
     if (this.registerForm.invalid) return;
-    console.log('Register', this.registerForm.value);
+
+    this.isLoading = true;
+    const { confirmPassword: _, ...payload } = this.registerForm.value;
+
+    this.auth.register(payload).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.toast.show('Account created successfully! Please sign in.', 'success');
+        this.router.navigate(['/login']);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        const msg = err?.message || 'Registration failed';
+        this.toast.show(msg, 'error');
+      },
+    });
   }
 }

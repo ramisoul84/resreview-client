@@ -1,1 +1,51 @@
-<p>admin works!</p>
+<div class="admin-page">
+  <h1>Admin Panel</h1>
+
+  @if (loading) {
+    <p class="loading">Loading users...</p>
+  } @else {
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Created</th>
+          <th>Last Login</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users; track user.id) {
+          <tr>
+            <td>
+              <div class="avatar" [style.background]="user.color">
+                {{ (user.name || '?').slice(0, 2).toUpperCase() }}
+              </div>
+            </td>
+            <td class="name">{{ user.name }}</td>
+            <td class="email">{{ user.email }}</td>
+            <td>
+              <span class="role-badge" [class.admin]="user.isAdmin" [class.user]="!user.isAdmin">
+                {{ user.isAdmin ? 'Admin' : 'User' }}
+              </span>
+            </td>
+            <td class="date">{{ user.createdAt }}</td>
+            <td class="date">{{ user.lastLoginAt }}</td>
+            <td>
+              <button
+                class="toggle-btn"
+                [class.demote]="user.isAdmin"
+                [class.promote]="!user.isAdmin"
+                [disabled]="updating.has(user.id)"
+                (click)="toggleRole(user)">
+                {{ updating.has(user.id) ? '...' : user.isAdmin ? 'Demote' : 'Promote' }}
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

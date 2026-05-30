@@ -1,0 +1,85 @@
+@if (modal.state().type !== 'none') {
+<div class="mover" (click)="onOverlayClick($event)">
+    <!-- New Session -->
+    @if (modal.state().type === 'new-session') {
+    <div class="modal narrow">
+        <div class="mtit">New Session</div>
+        <div class="mf">
+            <div class="ml">Session name</div>
+            <input class="mi" [(ngModel)]="sessName" placeholder="e.g. Round 2 Review"
+                (keydown.enter)="confirmSession()" />
+        </div>
+        <div class="mact">
+            <button class="mbtn" (click)="modal.close()">Cancel</button>
+            <button class="mbtn pri" (click)="confirmSession()">Create →</button>
+        </div>
+    </div>
+    }
+
+    <!-- Add Product -->
+    @if (modal.state().type === 'add-product') {
+    <div class="modal narrow">
+        <div class="mtit">New Product</div>
+        <div class="mf">
+            <div class="ml">Name</div>
+            <input class="mi" [(ngModel)]="prodName" placeholder="e.g. Mobile App"
+                (keydown.enter)="confirmAddProduct()" />
+        </div>
+        <div class="mact">
+            <button class="mbtn" (click)="modal.close()">Cancel</button>
+            <button class="mbtn pri" (click)="confirmAddProduct()">Add Product</button>
+        </div>
+    </div>
+    }
+
+
+    <!-- New Version -->
+    @if (modal.state().type === 'new-version') {
+    <div class="modal">
+        <div class="mtit">New Version</div>
+        <div class="mf">
+            <div class="ml">Label</div><input class="mi" [(ngModel)]="verLbl" placeholder="v1.4" />
+        </div>
+        <div class="mf">
+            <div class="ml">Name</div><input class="mi" [(ngModel)]="verName" placeholder="Room Navigator"
+                (keydown.enter)="confirmVersion()" />
+        </div>
+        <div class="mact">
+            <button class="mbtn" (click)="modal.close()">Cancel</button>
+            <button class="mbtn pri" (click)="confirmVersion()">Create</button>
+        </div>
+    </div>
+    }
+
+    <!-- Rename -->
+    @if (modal.state().type === 'rename') {
+    <div class="modal narrow">
+        <div class="mtit">Rename {{ modal.state().data?.entity ?? 'item' }}</div>
+        <div class="mf">
+            <div class="ml">New name</div>
+            <input class="mi" [(ngModel)]="renameVal" placeholder="Enter new name"
+                (keydown.enter)="confirmRename()" />
+        </div>
+        <div class="mact">
+            <button class="mbtn" (click)="modal.close()">Cancel</button>
+            <button class="mbtn pri" (click)="confirmRename()">Rename</button>
+        </div>
+    </div>
+    }
+
+    <!-- Delete Confirm -->
+    @if (modal.state().type === 'delete-confirm') {
+    <div class="modal narrow">
+        <div class="mtit">{{ modal.state().data?.title ?? 'Confirm' }}</div>
+        <div class="mf" style="padding:8px 0 16px;border:none;">
+            <div class="ml" style="font-weight:400;">{{ modal.state().data?.message ?? 'Are you sure?' }}</div>
+        </div>
+        <div class="mact">
+            <button class="mbtn" (click)="modal.close()">Cancel</button>
+            <button class="mbtn pri del" (click)="confirmDelete()">Delete</button>
+        </div>
+    </div>
+    }
+</div>
+
+}

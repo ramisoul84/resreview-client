@@ -1,42 +1,133 @@
-<div class="canvas"> 
 <app-toolbar></app-toolbar>
+<div class="cwrap" #cwrap [class]="'cwrap cwrap--' + st.tool()" (mousedown)="onDown($event)" (wheel)="onWheel($event)"
+    (contextmenu)="onCtx($event)" (click)="onWrapClick($event)">
 
-<div class="cwrap sel" id="cwrap">
-    <div class="cvp" id="cvp">
-        <svg id="ann-svg">
-            <defs id="svg-defs"></defs>
-        </svg>
-        <div id="annots"></div>
-        <div id="nodes-layer"></div>
-        <div class="img-area" id="main-img"
-            style="position:absolute;left:80px;top:60px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.14);">
-            <img id="canvas-img" alt="">
+    <!-- Dot grid background -->
+    <div class="grid-bg"></div>
 
+    <!-- Viewport transform wrapper -->
+    <div class="cvp" #cvp [style.transform]="transform()">
+
+        <!-- Main image area (browser mockup) -->
+        <div class="ccard" #mainImg style="position:absolute;left:80px;top:60px;width:960px;">
+            <div class="ctbar">
+                <div class="mac r"></div>
+                <div class="mac y"></div>
+                <div class="mac g"></div>
+                <div class="curl">resvr.app</div>
+            </div>
+            <div class="img-area">
+                @if (!st.currentVersion()) {
+                <div class="img-ph">
+                    <div class="img-ph-icon">📋</div>
+                    <div class="img-ph-title">No version yet</div>
+                    <div class="img-ph-sub">Create a version for this product first<br>to start adding screenshots</div>
+                </div>
+                } @else if (verImageUrl()) {
+                <img [src]="verImageUrl()" style="width:100%;height:100%;object-fit:contain;" />
+                } @else {
+                <div class="img-ph">
+                    <div class="img-ph-icon">🏠</div>
+                    <div class="img-ph-title">Load your screenshot</div>
+                    <div class="img-ph-sub">Ctrl+V / ⌘+V to paste<br>or right-click → Paste Screenshot<br>or choose a
+                        file</div>
+                    <label class="img-load-btn">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path d="M6 1v7M3 4l3-3 3 3" />
+                            <path d="M1 9.5h10v1H1z" />
+                        </svg>
+                        Choose Image
+                        <input type="file" accept="image/*" style="display:none" (change)="loadImage($event)" />
+                    </label>
+                </div>
+                }
+            </div>
         </div>
-        <div id="pins"></div>
+
+        <!-- SVG annotation layer -->
+        <svg #annSvg class="ann-svg" [class.sel-mode]="st.tool() === 'sel'">
+            <defs id="svg-defs-inner"></defs>
+        </svg>
+
+        <!-- Pins -->
+        @for (p of st.pins(); track p.id) {
+        <div class="pin-wrap" [style.left.px]="p.x" [style.top.px]="p.y" [attr.data-sess-id]="p.sessId"
+            [class.dim]="shouldDim(p)">
+            <div class="pin" [style.background]="p.color" [class.active]="st.activePinId() === p.id"
+                (click)="activatePin(p.id, $event)">
+                <span class="pnum">{{ p.num }}</span>
+            </div>
+            <div class="pin-label" (click)="activatePin(p.id, $event)">
+                <span class="pin-label-txt">{{ p.title }}</span>
+                @if (getSession(p.sessId); as sess) {
+                <span class="pin-label-sess">{{ sess.name }}</span>
+                }
+            </div>
+        </div>
+        }
+
+        <!-- Pending pin ghost -->
+        @if (pendingPt()) {
+        <div class="pin-wrap" [style.left.px]="pendingPt()!.x" [style.top.px]="pendingPt()!.y"
+            style="opacity:.7;pointer-events:none;">
+            <div class="pin" [style.background]="user()?.color">
+                <span class="pnum">?</span>
+            </div>
+        </div>
+        }
     </div>
-    <!-- View toggle upper right -->
+
+    <!-- Inline pin form -->
+    @if (pendingPt() && showInlineForm()) {
+    <div class="inline-form" [style.left.px]="inlineFormX()" [style.top.px]="inlineFormY()"
+        (mousedown)="$event.stopPropagation()">
+        <div class="if-header" [style.color]="user()?.color">
+            @if (activeSession(); as s) { {{ s.name }} }
+        </div>
+        <input #pinTitleIn class="if-input" [(ngModel)]="pinTitle" placeholder="What did you find?"
+            (keydown.enter)="confirmPin()" (keydown.escape)="cancelPin()" />
+        <textarea class="if-ta" [(ngModel)]="pinBody" placeholder="Description (optional)…" rows="2"></textarea>
+        <div class="if-tags">
+            @for (t of st.tags(); track t) {
+            <span class="if-tag" [class.on]="pendingTags.includes(t)" (click)="toggleTag(t)">{{ t }}</span>
+            }
+        </div>
+        <div class="if-actions">
+            <button class="if-cancel" (click)="cancelPin()">Cancel</button>
+            <button class="if-add" [style.background]="user()?.color" [style.border-color]="user()?.color"
+                (click)="confirmPin()">Add ↑</button>
+        </div>
+    </div>
+    }
+
+    <!-- View mode toggle 
     <div class="view-toggle">
-        <button class="vt-btn" id="vm-comment" data-vm="comment" onclick="setViewMode('comment')">Comment</button>
-        <button class="vt-btn" id="vm-session" data-vm="session" onclick="setViewMode('session')">Session</button>
-        <button class="vt-btn on" id="vm-full" data-vm="full" onclick="setViewMode('full')">Full</button>
+        <button class="vt-btn" [class.on]="st.viewMode() === 'session'"
+            (click)="st.viewMode.set('session')">Session</button>
+        <button class="vt-btn" [class.on]="st.viewMode() === 'full'" (click)="st.viewMode.set('full')">Full</button>
     </div>
-    <!-- Zoom -->
+    -->
+
+    <!-- Zoom controls -->
     <div class="zctrls">
-        <div class="zbtn" onclick="zoomBy(.12)" title="Zoom in">+</div>
-        <div class="zbtn" onclick="fitScreen()" title="Fit [F]"><svg width="11" height="11" viewBox="0 0 13 13"
-                fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M1.5 4.5V1.5H4.5" />
-                <path d="M8.5 1.5H11.5V4.5" />
-                <path d="M11.5 8.5V11.5H8.5" />
-                <path d="M4.5 11.5H1.5V8.5" />
-            </svg></div>
-        <div class="zbtn" onclick="zoomBy(-.12)" title="Zoom out">−</div>
+        <div class="zbtn" (click)="zoomBy(.12)" title="Zoom in">+</div>
+        <div class="zlvl">{{ zoomPct() }}%</div>
+        <div class="zbtn" (click)="fitScreen()" title="Fit [F]">
+            <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M1.5 4.5V1.5H4.5M8.5 1.5H11.5V4.5M11.5 8.5V11.5H8.5M4.5 11.5H1.5V8.5" />
+            </svg>
+        </div>
+        <div class="zbtn" (click)="zoomBy(-.12)" title="Zoom out">−</div>
     </div>
+
     <!-- Context menu -->
-    <div class="ctx-menu" id="ctx-menu"></div>
-    <!-- Roadmap overlay (within canvas area) -->
-
+    @if (ctxOpen()) {
+    <div class="ctx-menu" [style.left.px]="ctxPos().x" [style.top.px]="ctxPos().y">
+        <div class="ctx-item" (click)="ctxAddPin()">💬 Add Comment</div>
+        <div class="ctx-item" (click)="ctxAddNode()">📐 Add Node</div>
+        <div class="ctx-sep"></div>
+        <div class="ctx-item" (click)="ctxPasteImg()">📷 Paste Screenshot</div>
+    </div>
+    }
 </div>
-</div>
-
