@@ -1,5 +1,6 @@
 import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { RouterLink } from "@angular/router";
+import { Subscription } from 'rxjs';
 import { AuthService } from "../../core/services/auth.service";
 import { UserService } from "../../core/services/user.service";
 import { ToastService } from "../toast/toast.service";
@@ -9,7 +10,6 @@ import { Version } from '../../core/models/version';
 import { ModalService } from '../../core/services/modal.service';
 import { StateService } from '../../core/services/state.service';
 import { WebSocketService } from '../../core/services/websocket.service';
-import { OnlineUser } from '../../core/models/ws';
 
 @Component({
   selector: 'app-header',
@@ -24,6 +24,7 @@ export class Header implements OnDestroy {
   private modal = inject(ModalService);
   private state = inject(StateService);
   private ws = inject(WebSocketService);
+  private subs: Subscription[] = [];
 
   readonly colors = COLORS;
 
@@ -40,7 +41,7 @@ export class Header implements OnDestroy {
 
   readonly userDropOpen = signal(false);
   readonly wsStatus = signal<'disconnected' | 'connecting' | 'connected'>('disconnected');
-  readonly onlineUsers = signal<OnlineUser[]>([]);
+  readonly onlineUsers = this.ws.onlineUsers;
 
   readonly wsDotColor = computed(() => {
     const s = this.wsStatus();
@@ -54,26 +55,21 @@ export class Header implements OnDestroy {
   readonly showAvatars = computed(() => this.wsStatus() === 'connected');
 
   constructor() {
-    const token = this.auth.token();
     const u = this.auth.currentUser();
-    if (token) {
-      this.ws.connect(token, u?.name, u?.color);
+    if (this.auth.token()) {
+      this.ws.connect(u?.name, u?.color, this.state.curVerId() ?? undefined);
     }
 
-    this.ws.status$.subscribe(status => {
+    this.subs.push(this.ws.status$.subscribe(status => {
       if (status === 'connected') this.wsStatus.set('connected');
       else if (status === 'connecting') this.wsStatus.set('connecting');
       else this.wsStatus.set('disconnected');
-    });
-
-    this.ws.messages$.subscribe(msg => {
-      if (msg.type === 'presence') {
-        this.onlineUsers.set(msg.users ?? []);
-      }
-    });
+    }));
   }
 
   ngOnDestroy(): void {
+    this.subs.forEach(s => s.unsubscribe());
+    this.subs = [];
     this.ws.disconnect();
   }
 

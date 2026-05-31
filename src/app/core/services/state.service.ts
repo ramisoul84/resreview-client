@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from "@angular/core";
 import { AuthService } from "./auth.service";
 import { Session } from "../models/session";
-import { Product } from "../models/product";
+import { Product, ProductWithVersions } from "../models/product";
 import { SessionService } from "./session.service";
 import { ProductService } from "./product.service";
 import { VersionService } from "./version.service";
@@ -38,9 +38,28 @@ export class StateService {
     readonly products = signal<Product[]>([]);
     readonly versions = signal<Version[]>([]);
     readonly annotations = signal<Annotation[]>([]);
-    readonly pins = signal<Pin[]>([]);
+    readonly pins = computed(() => {
+        let num = 0;
+        return this.annotations()
+            .filter(a => a.type === 'pin')
+            .map(a => ({
+                id: a.id,
+                x: a.x,
+                y: a.y,
+                color: a.color,
+                num: ++num,
+                title: a.title || '',
+                sessId: a.sessionId,
+            } as Pin));
+    });
 
     readonly tags = signal<string[]>([]);
+
+    readonly versionOnlineCount = computed(() => {
+        const verId = this.curVerId();
+        if (!verId) return 0;
+        return this.ws.onlineUsers().filter(u => u.versionId === verId).length;
+    });
 
     readonly activeProductId = signal<string | null>(localStorage.getItem(ACTIVE_PRODUCT_KEY));
     readonly curVerId = signal<string | null>(localStorage.getItem(ACTIVE_VERSION_KEY));
@@ -95,6 +114,13 @@ export class StateService {
                 }
             }
 
+            if (op.op === 'update_annotation') {
+                const upd = op.annotation as Annotation;
+                this.annotations.update(list =>
+                    list.map(a => a.id === upd.id ? { ...a, ...upd } : a)
+                );
+            }
+
             if (op.op === 'delete_annotation') {
                 this.annotations.update(list =>
                     list.filter(a => a.id !== op.annotationId)
@@ -124,31 +150,30 @@ export class StateService {
                 ? seed.versions.find(v => v.productId === prodId)
                 : seed.versions[0];
             if (first) this.setActiveVersion(first.id);
+        } else if (this.curVerId()) {
+            this.loadAnnotations(this.curVerId()!);
         }
     }
 
     private async buildSeedState(): Promise<AppState> {
         try {
-            const [sessions, products] = await Promise.all([
+            const [sessions, productsWithVersions] = await Promise.all([
                 firstValueFrom(this.sessionSvc.getSessions()),
-                firstValueFrom(this.productSvc.getProducts())
+                firstValueFrom(this.productSvc.getProductsWithVersions())
             ]);
 
-            let allVersions: Version[] = [];
-            if (products?.length) {
-                const results = await Promise.allSettled(
-                    products.map(p => firstValueFrom(this.versionSvc.getVersions(p.id)))
-                );
-                for (const r of results) {
-                    if (r.status === 'fulfilled' && r.value) {
-                        allVersions.push(...r.value);
-                    }
-                }
-            }
+            const products: Product[] = productsWithVersions?.map(p => ({
+                id: p.id,
+                name: p.name,
+                userId: p.userId,
+                createdAt: p.createdAt,
+            })) ?? [];
+
+            const allVersions: Version[] = productsWithVersions?.flatMap(p => p.versions) ?? [];
 
             return {
                 sessions: sessions ?? [],
-                products: products ?? [],
+                products,
                 versions: allVersions,
             };
         } catch (error) {

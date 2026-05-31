@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, inject, signal, ViewChild, effect } from '@angular/core';
+import { Component, ElementRef, HostListener, inject, signal, ViewChild, effect, computed } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../shared/toast/toast.service';
 import { ModalService } from '../../core/services/modal.service';
@@ -6,6 +6,7 @@ import { Pin } from '../../core/models/pin';
 import { StateService } from '../../core/services/state.service';
 import { VersionService } from '../../core/services/version.service';
 import { AnnotationService } from '../../core/services/annotation.service';
+import { WebSocketService } from '../../core/services/websocket.service';
 import { Toolbar } from '../../shared/toolbar/toolbar';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -33,6 +34,7 @@ export class Canvas {
   st = inject(StateService);
   private versionSvc = inject(VersionService);
   private annotationSvc = inject(AnnotationService);
+  private ws = inject(WebSocketService);
   private auth = inject(AuthService);
   private toast = inject(ToastService);
   private modal = inject(ModalService);
@@ -55,33 +57,44 @@ export class Canvas {
   private freePts: DrawPoint[] = [];
   private freePath: SVGElement | null = null;
 
-  // ── Pin form ──
+  // ── Inline form state ──
+  readonly pendingToolType = signal<'pin' | 'text' | 'node' | null>(null);
   readonly pendingPt = signal<DrawPoint | null>(null);
-  readonly showInlineForm = signal(false);
-  readonly inlineFormX = signal(0);
-  readonly inlineFormY = signal(0);
-  pinTitle = '';
-  pinBody = '';
+  readonly formX = signal(0);
+  readonly formY = signal(0);
+  formTitle = '';
+  formBody = '';
   pendingTags: string[] = [];
+
+  readonly showInlineForm = computed(() => this.pendingToolType() !== null);
 
   // ── Context menu ──
   readonly ctxOpen = signal(false);
   readonly ctxPos = signal({ x: 0, y: 0 });
   private ctxCanvasPos: DrawPoint = { x: 0, y: 0 };
 
-  // ── Computed ──
+  // ── Selection ──
+  readonly selectedAnnId = signal<string | null>(null);
   readonly user = this.auth.currentUser;
   readonly verImageUrl = () => {
     return this.st.currentVersion()?.url || null;
   };
   readonly activeSession = () =>
     this.st.sessions().find(s => s.id === this.st.activeSessionId());
+  readonly versionOnlineCount = this.st.versionOnlineCount;
 
   private renderEffect = effect(() => {
     this.st.annotations();
     this.st.currentVersion();
     const svg = this.annSvgRef?.nativeElement;
     if (svg) this.renderAnnotations();
+  });
+
+  private verTrackEffect = effect(() => {
+    const verId = this.st.curVerId();
+    if (verId) {
+      this.ws.setViewingVersion(verId);
+    }
   });
 
   ngOnInit(): void { }
@@ -110,6 +123,12 @@ export class Canvas {
     for (const ann of this.st.annotations()) {
       const el = this.createSvgFromAnnotation(ann);
       if (el) svg.appendChild(el);
+    }
+
+    const selId = this.selectedAnnId();
+    if (selId) {
+      const selEl = svg.querySelector(`[data-ann-id="${selId}"]`);
+      if (selEl) selEl.classList.add('ann-selected');
     }
   }
 
@@ -163,6 +182,17 @@ export class Canvas {
         g.appendChild(txt);
       }
       return g;
+    }
+
+    if (ann.type === 'text') {
+      el = document.createElementNS(svgNs, 'text');
+      el.setAttribute('data-ann-id', ann.id);
+      el.setAttribute('x', String(ann.x));
+      el.setAttribute('y', String(ann.y));
+      el.setAttribute('fill', ann.color || '#333');
+      el.setAttribute('font-size', '14');
+      el.textContent = ann.title || ann.text || '';
+      return el;
     }
 
     let tag = SVG_TAG_MAP[ann.type];
@@ -270,7 +300,6 @@ export class Canvas {
     this.ctxOpen.set(false);
 
     const tool = this.st.tool();
-
     if (tool === 'pan') {
       this.panning = true;
       this.panStart = { x: e.clientX - this.st.panX(), y: e.clientY - this.st.panY() };
@@ -300,12 +329,38 @@ export class Canvas {
       return;
     }
 
+    if (tool === 'text' || tool === 'node') {
+      this.pendingPt.set(pt);
+      this.formTitle = '';
+      this.formBody = '';
+      this.pendingTags = [];
+      this.pendingToolType.set(tool as 'text' | 'node');
+      const screen = this.screenPt(pt);
+      const wrap = this.cwrapRef.nativeElement.getBoundingClientRect();
+      let fx = screen.x + 20, fy = screen.y - 10;
+      if (fx + 220 > wrap.width - 8) fx = screen.x - 230;
+      if (fy + 100 > wrap.height - 8) fy = wrap.height - 110;
+      if (fy < 4) fy = 4;
+      this.formX.set(fx);
+      this.formY.set(fy);
+      return;
+    }
+
     if (tool === 'sel') {
-      if ((e.target as HTMLElement).classList.contains('cwrap') ||
-        (e.target as HTMLElement) === this.cvpRef?.nativeElement) {
+      const target = e.target as HTMLElement;
+      const annEl = target.closest('[data-ann-id]') as SVGElement | null;
+      if (annEl) {
+        this.selectedAnnId.set(annEl.getAttribute('data-ann-id'));
+        this.applySelection(annEl);
+        return;
+      }
+      this.selectedAnnId.set(null);
+      this.applySelection(null);
+      if (target.classList.contains('cwrap') || target === this.cvpRef?.nativeElement) {
         this.st.activePinId.set(null);
         this.st.focusSessId.set(null);
       }
+      return;
     }
   }
 
@@ -377,10 +432,11 @@ export class Canvas {
     const tool = this.st.tool();
     this.tempEl = null;
     this.drawStart = null;
-
     let tooSmall = false;
     if (tool === 'rect') {
-      tooSmall = parseFloat(el.getAttribute('width') || '0') < 8 || parseFloat(el.getAttribute('height') || '0') < 8;
+      const w = parseFloat(el.getAttribute('width') || '0');
+      const h = parseFloat(el.getAttribute('height') || '0');
+      tooSmall = w < 8 || h < 8;
     } else if (tool === 'ellipse') {
       tooSmall = parseFloat(el.getAttribute('rx') || '0') < 4;
     } else if (tool === 'arrow') {
@@ -402,27 +458,39 @@ export class Canvas {
   }
 
   private async persistAnnotation(el: SVGElement, type: string) {
-    const user = this.auth.currentUser()!;
+    const user = this.auth.currentUser();
     const prodId = this.st.activeProductId();
     const verId = this.st.curVerId();
-    if (!prodId || !verId) return;
+    if (!user) {
+      el.remove();
+      this.toast.show('Not logged in');
+      return;
+    }
+    if (!prodId || !verId) {
+      el.remove();
+      this.toast.show('Select a product with a version first');
+      return;
+    }
 
     const attrs = this.getElAttrs(el);
-
+    const cx = parseFloat(attrs['x'] ?? attrs['cx'] ?? attrs['x1'] ?? '0');
+    const cy = parseFloat(attrs['y'] ?? attrs['cy'] ?? attrs['y1'] ?? '0');
+    const payload = {
+      type,
+      data: JSON.stringify(attrs),
+      sessionId: this.st.activeSessionId() ?? '',
+      color: user.color,
+      strokeW: this.st.strokeW(),
+      strokeStyle: this.st.strokeStyle(),
+      x: Math.round(cx),
+      y: Math.round(cy),
+    };
     try {
-      const ann = await firstValueFrom(this.annotationSvc.createAnnotation(prodId, verId, {
-        type,
-        data: JSON.stringify(attrs),
-        sessionId: this.st.activeSessionId() ?? '',
-        color: user.color,
-        strokeW: this.st.strokeW(),
-        strokeStyle: this.st.strokeStyle(),
-        x: 0,
-        y: 0,
-      }));
+      const ann = await firstValueFrom(this.annotationSvc.createAnnotation(prodId, verId, payload));
       el.setAttribute('data-ann-id', ann.id);
       this.st.addAnnotation(ann);
     } catch {
+      el.remove();
       this.toast.show('Failed to save annotation');
     }
   }
@@ -459,21 +527,21 @@ export class Canvas {
     defs.appendChild(m);
   }
 
-  // ── Pins ──
+  // ── Inline forms ──
   startPin(pt: DrawPoint, e: MouseEvent) {
     this.pendingPt.set(pt);
+    this.formTitle = '';
+    this.formBody = '';
+    this.pendingTags = [];
+    this.pendingToolType.set('pin');
     const screen = this.screenPt(pt);
     const wrap = this.cwrapRef.nativeElement.getBoundingClientRect();
     let fx = screen.x + 30, fy = screen.y - 10;
     if (fx + 240 > wrap.width - 8) fx = screen.x - 250;
     if (fy + 140 > wrap.height - 8) fy = wrap.height - 150;
     if (fy < 4) fy = 4;
-    this.inlineFormX.set(fx);
-    this.inlineFormY.set(fy);
-    this.showInlineForm.set(true);
-    this.pinTitle = '';
-    this.pinBody = '';
-    this.pendingTags = [];
+    this.formX.set(fx);
+    this.formY.set(fy);
     setTimeout(() => this.pinTitleInRef?.nativeElement?.focus(), 30);
   }
 
@@ -483,41 +551,109 @@ export class Canvas {
     else this.pendingTags.push(t);
   }
 
-  async confirmPin() {
-    const title = this.pinTitle.trim();
-    if (!title) { this.toast.show('Add a title'); return; }
-    const pt = this.pendingPt();
-    if (!pt) return;
-    const prodId = this.st.activeProductId();
-    const verId = this.st.curVerId();
-    if (!prodId || !verId) return;
-
-    try {
-      const ann = await firstValueFrom(this.annotationSvc.createAnnotation(prodId, verId, {
-        type: 'pin',
-        x: pt.x,
-        y: pt.y,
-        title,
-        text: this.pinBody.trim(),
-        sessionId: this.st.activeSessionId() ?? '',
-        color: this.user()?.color,
-      }));
-      this.st.addAnnotation(ann);
-      this.toast.show('Comment added', 'success');
-    } catch {
-      this.toast.show('Failed to save comment');
-    }
-    this.cancelPin();
+  private closeForm() {
+    this.pendingPt.set(null);
+    this.pendingToolType.set(null);
   }
 
-  cancelPin() {
-    this.pendingPt.set(null);
-    this.showInlineForm.set(false);
+  async confirmForm() {
+    const toolType = this.pendingToolType();
+    const pt = this.pendingPt();
+    if (!toolType || !pt) return;
+    const prodId = this.st.activeProductId();
+    const verId = this.st.curVerId();
+    if (!prodId || !verId) {
+      this.toast.show('Select a product with a version first');
+      this.closeForm();
+      return;
+    }
+
+    if (toolType === 'pin') {
+      const title = this.formTitle.trim();
+      if (!title) { this.toast.show('Add a title'); return; }
+      try {
+        const ann = await firstValueFrom(this.annotationSvc.createAnnotation(prodId, verId, {
+          type: 'pin',
+          x: pt.x,
+          y: pt.y,
+          title,
+          text: this.formBody.trim(),
+          sessionId: this.st.activeSessionId() ?? '',
+          color: this.user()?.color,
+        }));
+        this.st.addAnnotation(ann);
+        this.toast.show('Comment added', 'success');
+      } catch {
+        this.toast.show('Failed to save comment');
+      }
+    } else if (toolType === 'text') {
+      const text = this.formTitle.trim();
+      if (!text) { this.closeForm(); return; }
+      try {
+        const ann = await firstValueFrom(this.annotationSvc.createAnnotation(prodId, verId, {
+          type: 'text',
+          x: pt.x,
+          y: pt.y,
+          title: text,
+          sessionId: this.st.activeSessionId() ?? '',
+          color: this.user()?.color,
+        }));
+        this.st.addAnnotation(ann);
+      } catch {
+        this.toast.show('Failed to save text');
+      }
+    } else if (toolType === 'node') {
+      const title = this.formTitle.trim();
+      if (!title) { this.toast.show('Add a label'); return; }
+      try {
+        const ann = await firstValueFrom(this.annotationSvc.createAnnotation(prodId, verId, {
+          type: 'node',
+          x: pt.x,
+          y: pt.y,
+          title,
+          sessionId: this.st.activeSessionId() ?? '',
+          color: this.user()?.color,
+        }));
+        this.st.addAnnotation(ann);
+        this.toast.show('Node added', 'success');
+      } catch {
+        this.toast.show('Failed to save node');
+      }
+    }
+    this.closeForm();
+  }
+
+  cancelForm() {
+    this.closeForm();
   }
 
   activatePin(id: string, e: MouseEvent) {
     e.stopPropagation();
     this.st.activePinId.set(id);
+  }
+
+  private applySelection(el: SVGElement | null): void {
+    const svg = this.annSvgRef?.nativeElement;
+    if (!svg) return;
+    svg.querySelectorAll('.ann-selected').forEach(e => e.classList.remove('ann-selected'));
+    if (el) el.classList.add('ann-selected');
+  }
+
+  private async deleteSelected(): Promise<void> {
+    const id = this.selectedAnnId();
+    if (!id) return;
+    const prodId = this.st.activeProductId();
+    const verId = this.st.curVerId();
+    if (!prodId || !verId) return;
+
+    try {
+      await firstValueFrom(this.annotationSvc.deleteAnnotation(prodId, verId, id));
+      this.st.removeAnnotation(id);
+      this.selectedAnnId.set(null);
+      this.applySelection(null);
+    } catch {
+      this.toast.show('Failed to delete annotation');
+    }
   }
 
   // ── Context menu ──
@@ -537,7 +673,20 @@ export class Canvas {
 
   ctxAddNode() {
     this.ctxOpen.set(false);
-    // this.modal.openAddNode(this.ctxCanvasPos.x, this.ctxCanvasPos.y);
+    const pt = this.ctxCanvasPos;
+    this.pendingPt.set(pt);
+    this.formTitle = '';
+    this.formBody = '';
+    this.pendingTags = [];
+    this.pendingToolType.set('node');
+    const screen = this.screenPt(pt);
+    const wrap = this.cwrapRef.nativeElement.getBoundingClientRect();
+    let fx = screen.x + 20, fy = screen.y - 10;
+    if (fx + 220 > wrap.width - 8) fx = screen.x - 230;
+    if (fy + 100 > wrap.height - 8) fy = wrap.height - 110;
+    if (fy < 4) fy = 4;
+    this.formX.set(fx);
+    this.formY.set(fy);
   }
 
   private async uploadFile(file: File): Promise<void> {
@@ -587,7 +736,10 @@ export class Canvas {
   onKey(e: KeyboardEvent) {
     if ((e.target as HTMLElement).matches('input,textarea,[contenteditable]')) return;
     if (e.key === 'f' || e.key === 'F') this.fitScreen();
-    if (e.key === 'Escape') this.cancelPin();
+    if (e.key === 'Escape') { this.cancelForm(); this.selectedAnnId.set(null); this.applySelection(null); }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && this.selectedAnnId() && this.st.tool() === 'sel') {
+      this.deleteSelected();
+    }
   }
 
   @HostListener('document:paste', ['$event'])

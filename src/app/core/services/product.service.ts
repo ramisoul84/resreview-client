@@ -1,7 +1,7 @@
 import { inject, Injectable } from "@angular/core";
 import { environment } from "../../../environments/environment";
 import { HttpClient } from "@angular/common/http";
-import { Product } from "../models/product";
+import { Product, ProductWithVersions } from "../models/product";
 import { Observable } from "rxjs";
 
 @Injectable({
@@ -13,6 +13,10 @@ export class ProductService {
 
     getProducts(): Observable<Product[]> {
         return this.http.get<Product[]>(`${this.API_URL}`);
+    }
+
+    getProductsWithVersions(): Observable<ProductWithVersions[]> {
+        return this.http.get<ProductWithVersions[]>(`${this.API_URL}-with-versions`);
     }
 
     createProduct(name: string): Observable<Product> {

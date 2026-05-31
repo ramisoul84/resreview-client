@@ -4,3 +4,7 @@ export interface Product {
   userId: string;
   createdAt: string;
 }
+
+export interface ProductWithVersions extends Product {
+  versions: import('./version').Version[];
+}

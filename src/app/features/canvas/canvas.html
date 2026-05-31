@@ -24,7 +24,7 @@
                     <div class="img-ph-sub">Create a version for this product first<br>to start adding screenshots</div>
                 </div>
                 } @else if (verImageUrl()) {
-                <img [src]="verImageUrl()" style="width:100%;height:100%;object-fit:contain;" />
+                <img [src]="verImageUrl()" draggable="false" style="width:100%;height:100%;object-fit:contain;" />
                 } @else {
                 <div class="img-ph">
                     <div class="img-ph-icon">🏠</div>
@@ -67,9 +67,9 @@
         </div>
         }
 
-        <!-- Pending pin ghost -->
-        @if (pendingPt()) {
-        <div class="pin-wrap" [style.left.px]="pendingPt()!.x" [style.top.px]="pendingPt()!.y"
+        <!-- Pending placement ghost -->
+        @if (pendingPt(); as pt) {
+        <div class="pin-wrap" [style.left.px]="pt.x" [style.top.px]="pt.y"
             style="opacity:.7;pointer-events:none;">
             <div class="pin" [style.background]="user()?.color">
                 <span class="pnum">?</span>
@@ -78,36 +78,60 @@
         }
     </div>
 
-    <!-- Inline pin form -->
-    @if (pendingPt() && showInlineForm()) {
-    <div class="inline-form" [style.left.px]="inlineFormX()" [style.top.px]="inlineFormY()"
+    <!-- Inline form -->
+    @if (pendingPt() && showInlineForm(); as pt) {
+    <div class="inline-form" [style.left.px]="formX()" [style.top.px]="formY()"
         (mousedown)="$event.stopPropagation()">
+
+        @if (pendingToolType() === 'pin') {
         <div class="if-header" [style.color]="user()?.color">
             @if (activeSession(); as s) { {{ s.name }} }
         </div>
-        <input #pinTitleIn class="if-input" [(ngModel)]="pinTitle" placeholder="What did you find?"
-            (keydown.enter)="confirmPin()" (keydown.escape)="cancelPin()" />
-        <textarea class="if-ta" [(ngModel)]="pinBody" placeholder="Description (optional)…" rows="2"></textarea>
+        <input #pinTitleIn class="if-input" [(ngModel)]="formTitle" placeholder="What did you find?"
+            (keydown.enter)="confirmForm()" (keydown.escape)="cancelForm()" />
+        <textarea class="if-ta" [(ngModel)]="formBody" placeholder="Description (optional)…" rows="2"></textarea>
         <div class="if-tags">
             @for (t of st.tags(); track t) {
             <span class="if-tag" [class.on]="pendingTags.includes(t)" (click)="toggleTag(t)">{{ t }}</span>
             }
         </div>
         <div class="if-actions">
-            <button class="if-cancel" (click)="cancelPin()">Cancel</button>
+            <button class="if-cancel" (click)="cancelForm()">Cancel</button>
             <button class="if-add" [style.background]="user()?.color" [style.border-color]="user()?.color"
-                (click)="confirmPin()">Add ↑</button>
+                (click)="confirmForm()">Add ↑</button>
         </div>
+        }
+
+        @if (pendingToolType() === 'text') {
+        <div class="if-header">Add Text</div>
+        <input #pinTitleIn class="if-input" [(ngModel)]="formTitle" placeholder="Type your text…"
+            (keydown.enter)="confirmForm()" (keydown.escape)="cancelForm()" />
+        <div class="if-actions">
+            <button class="if-cancel" (click)="cancelForm()">Cancel</button>
+            <button class="if-add" [style.background]="user()?.color" [style.border-color]="user()?.color"
+                (click)="confirmForm()">Add</button>
+        </div>
+        }
+
+        @if (pendingToolType() === 'node') {
+        <div class="if-header">Add Node</div>
+        <input #pinTitleIn class="if-input" [(ngModel)]="formTitle" placeholder="Node label…"
+            (keydown.enter)="confirmForm()" (keydown.escape)="cancelForm()" />
+        <div class="if-actions">
+            <button class="if-cancel" (click)="cancelForm()">Cancel</button>
+            <button class="if-add" [style.background]="user()?.color" [style.border-color]="user()?.color"
+                (click)="confirmForm()">Add</button>
+        </div>
+        }
+
     </div>
     }
 
-    <!-- View mode toggle 
-    <div class="view-toggle">
-        <button class="vt-btn" [class.on]="st.viewMode() === 'session'"
-            (click)="st.viewMode.set('session')">Session</button>
-        <button class="vt-btn" [class.on]="st.viewMode() === 'full'" (click)="st.viewMode.set('full')">Full</button>
+    <!-- Online users -->
+    <div class="ver-online">
+        <div class="ver-online-dot"></div>
+        <span>{{ versionOnlineCount() }} online</span>
     </div>
-    -->
 
     <!-- Zoom controls -->
     <div class="zctrls">

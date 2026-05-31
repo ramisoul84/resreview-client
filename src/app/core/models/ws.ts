@@ -4,12 +4,14 @@ export type WsOp =
   | { op: 'update_pin'; pin: any }
   | { op: 'create_annotation'; annotation: any }
   | { op: 'update_annotation'; annotation: any }
-  | { op: 'delete_annotation'; annotationId: string };
+  | { op: 'delete_annotation'; annotationId: string }
+  | { op: 'set_viewing_version'; versionId: string };
 
 export interface OnlineUser {
   userId: string;
   name: string;
   color: string;
+  versionId: string;
 }
 
 export interface WsMessage {
