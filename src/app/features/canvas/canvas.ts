@@ -574,6 +574,7 @@ export class Canvas {
       try {
         const ann = await firstValueFrom(this.annotationSvc.createAnnotation(prodId, verId, {
           type: 'pin',
+          data: '{}',
           x: pt.x,
           y: pt.y,
           title,
@@ -592,6 +593,7 @@ export class Canvas {
       try {
         const ann = await firstValueFrom(this.annotationSvc.createAnnotation(prodId, verId, {
           type: 'text',
+          data: '{}',
           x: pt.x,
           y: pt.y,
           title: text,
@@ -608,6 +610,7 @@ export class Canvas {
       try {
         const ann = await firstValueFrom(this.annotationSvc.createAnnotation(prodId, verId, {
           type: 'node',
+          data: '{}',
           x: pt.x,
           y: pt.y,
           title,
